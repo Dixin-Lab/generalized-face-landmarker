@@ -112,14 +112,8 @@ def create_logger(cfg, cfg_name, result_dir, loopname, phase='train'):
 
     return logger, str(final_output_dir), str(tensorboard_log_dir)
 
-from torch.nn import functional as F
-def recon_loss(pred, true):
-    return F.l1_loss(pred, true)
+def check_folder(log_dir):
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    return log_dir
 
-def TV(x):
-    ell =  torch.pow(torch.abs(x[:,:,1:,: ] - x[:,:,0:-1,:  ]), 2).mean()
-    ell += torch.pow(torch.abs(x[:,:,: ,1:] - x[:,:,:  ,0:-1]), 2).mean()
-    ell += torch.pow(torch.abs(x[:,:,1:,1:] - x[:,:, :-1, :-1]), 2).mean()
-    ell += torch.pow(torch.abs(x[:,:,1:,:-1] - x[:,:,:-1,1:]), 2).mean()
-    ell /= 4.
-    return ell

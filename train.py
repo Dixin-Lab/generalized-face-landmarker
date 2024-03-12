@@ -150,6 +150,28 @@ def test_warp(warpA2B, loader):
     return nme
 
 
+
+"""checking arguments"""
+def check_args(args):
+    # --result_dir
+    check_folder(args.result_dir)
+    check_folder(args.snapshot_dir)
+    check_folder(args.save_data_path)
+
+    # --epoch
+    try:
+        assert args.epoch >= 1
+    except:
+        print('number of epochs must be larger than or equal to one')
+
+    # --batch_size
+    try:
+        assert args.batch_size >= 1
+    except:
+        print('batch size must be larger than or equal to one')
+    return args
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 

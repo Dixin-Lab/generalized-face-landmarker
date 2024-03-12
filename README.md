@@ -9,7 +9,6 @@ This is the official repository for the following paper:
 ![Scheme](/assets/scheme.png "Learning Scheme")
 
 # Install
-Install packages
 
 ```commandline
 pip install -r requirements.txt
