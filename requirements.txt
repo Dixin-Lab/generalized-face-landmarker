@@ -1,0 +1,10 @@
+pytorch
+torchvision
+numpy
+random
+copy
+opencv-python
+scipy
+argparse
+logging
+kornia
