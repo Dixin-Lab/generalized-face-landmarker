@@ -149,9 +149,6 @@ def update_config(cfg, args):
     if args.dataDir:
         cfg.DATA_DIR = args.dataDir
 
-    if args.target:
-        cfg.TARGET = args.target
-
 
     if cfg.MODEL.PRETRAINED is not None:
         cfg.MODEL.PRETRAINED = os.path.join(

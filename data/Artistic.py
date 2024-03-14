@@ -21,11 +21,11 @@ class StyleDataSet(Dataset):
         self.Fraction = cfg.W300.FRACTION
 
         self.Transform = transform
-        self.root_landmark = "/home/jiayi/Work_landmark/Data/AF_dataset/landmarks"
+        self.root_landmark = os.path.join(root, 'landmarks')
         if is_train:
-            self.annotation_file = "/home/jiayi/Work_landmark/Data/AF_dataset/train_list.txt"
+            self.annotation_file = os.path.join(root, 'train_list.txt')
         else:
-            self.annotation_file = "/home/jiayi/Work_landmark/Data/AF_dataset/test_list.txt"
+            self.annotation_file = os.path.join(root, 'test_list.txt')
 
         self.database = self.get_image()
 
@@ -92,20 +92,20 @@ class StyleDataSet(Dataset):
         return meta
 
 
-def get_cartoon_dataloader(batch_size):
+def get_cartoon_dataloader(opt):
     normalize = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])]
     )
 
-    train_dataset = StyleDataSet(root="/home/jiayi/Work_landmark/Data/AF_dataset/images", is_train=True, transform=normalize)
+    train_dataset = StyleDataSet(root=opt.tgt_data, is_train=True, transform=normalize)
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=batch_size,
+        batch_size=opt.batch_size,
         shuffle=True,
         drop_last=True
     )
-    cartoon_dataset = StyleDataSet(root="/home/jiayi/Work_landmark/Data/AF_dataset/images", is_train=False, transform=normalize)
+    cartoon_dataset = StyleDataSet(root=opt.tgt_data, is_train=False, transform=normalize)
     cartoon_loader = torch.utils.data.DataLoader(
         cartoon_dataset,
         batch_size=1,

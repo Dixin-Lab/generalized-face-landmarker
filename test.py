@@ -18,14 +18,25 @@ def parse_args():
 
     # landmark_detector
     parser.add_argument('--modelDir', help='model directory', type=str, default='./Weight')
-    parser.add_argument('--checkpoint', help='checkpoint file', type=str, default="D:/PycharmProjects/HRnet_warp_in_turn/checkpoints_update_in_turn_perceptual/params_0000040.pt")
+    parser.add_argument('--checkpoint', help='checkpoint file', type=str, default="/home/jiayi/Work_landmark/generalized_face_landmarker/snapshots/final_state.pt")
 
     parser.add_argument('--logDir', help='log directory', type=str, default='./log')
     parser.add_argument('--dataDir', help='data directory', type=str, default='./')
     parser.add_argument('--prevModelDir', help='prev Model directory', type=str, default=None)
 
     parser.add_argument('--batch_size', help='how many samples in one batch', type=int, default=32)
-
+    parser.add_argument(
+        "--src_data",
+        type=str,
+        default='/home/jiayi/Work_landmark/Work_landmark/Data/300W',
+        help="the path to the source dataset",
+    )
+    parser.add_argument(
+        "--tgt_data",
+        type=str,
+        default='/home/jiayi/Work_landmark/Work_landmark/Data/CariFace_dataset',
+        help="the path to the target dataset",
+    )
     args = parser.parse_args()
 
     return args
@@ -70,7 +81,7 @@ class FR_AUC:
         return [round(fr, 4), round(auc, 6)]
 
 
-def main_function_source():
+def main_function_test():
 
     args = parse_args()
     update_config(cfg, args)
@@ -91,18 +102,18 @@ def main_function_source():
 
     model = torch.nn.DataParallel(model, device_ids=cfg.GPUS).cuda()
 
-    _, valid_loader = get_W300_dataloader(args.batch_size)
+    _, valid_loader = get_W300_dataloader(args.batch_size, args)
 
     checkpoint = torch.load(args.checkpoint)
     model.module.load_state_dict(checkpoint['warpA2B'])
     model.eval()
 
-    error_list = []
-    cal = FR_AUC('300W')
+    src_err, tgt_err = [], []
 
+    print(" [*] Testing on source domain!")
     with torch.no_grad():
-        for i, (input, meta) in enumerate(valid_loader):
-
+        for i, meta in enumerate(valid_loader):
+            input = meta['image']
             Annotated_Points = meta['Annotated_Points'].numpy()[0]
             Trans = meta['trans'].numpy()[0]
 
@@ -117,45 +128,15 @@ def main_function_source():
                 i, len(valid_loader), error=error*100.0)
 
             print(msg)
-            error_list.append(error)
+            src_err.append(error)
+        print(" [*] finished on source domain!")
 
-        print("finished")
-        print("Mean Error: {:.3f}".format((np.mean(np.array(error_list)) * 100.0)))
-        print("Failure Rate: {:.4f}, AUC: {:.4f}".format(cal.test(error_list, 0.08)[0], cal.test(error_list, 0.08)[1]))
+        # test on target domain
+        print(" [*] Testing on target domain!")
+        _, valid_loader = get_cartoon_dataloader(args.batch_size, args)
 
-def main_function_target():
-
-    args = parse_args()
-    update_config(cfg, args)
-
-    # create logger
-    logger = create_logger(cfg)
-    logger.info(pprint.pformat(args))
-    logger.info(cfg)
-
-    torch.backends.cudnn.benchmark = cfg.CUDNN.BENCHMARK
-    torch.backends.cudnn.deterministic = cfg.CUDNN.DETERMINISTIC
-    torch.backends.cudnn.enabled = cfg.CUDNN.ENABLED
-
-    model = Sparse_alignment_network(cfg.W300.NUM_POINT, cfg.MODEL.OUT_DIM,
-                                       cfg.MODEL.TRAINABLE, cfg.MODEL.INTER_LAYER,
-                                       cfg.MODEL.DILATION, cfg.TRANSFORMER.NHEAD,
-                                       cfg.TRANSFORMER.FEED_DIM, cfg.W300.INITIAL_PATH, cfg).to('cuda')
-
-    model = torch.nn.DataParallel(model, device_ids=cfg.GPUS).cuda()
-
-    _, valid_loader = get_cartoon_dataloader(args.batch_size)
-
-    checkpoint = torch.load(args.checkpoint)
-    model.module.load_state_dict(checkpoint['warpA2B'])
-    model.eval()
-
-    error_list = []
-    cal = FR_AUC('CariFace')
-
-    with torch.no_grad():
-        for i, (input, meta) in enumerate(valid_loader):
-
+        for i, meta in enumerate(valid_loader):
+            input = meta['image']
             Annotated_Points = meta['Annotated_Points'].numpy()[0]
             Trans = meta['trans'].numpy()[0]
 
@@ -167,18 +148,23 @@ def main_function_target():
 
             msg = 'Epoch: [{0}/{1}]\t' \
                   'NME: {error:.3f}%\t'.format(
-                i, len(valid_loader), error=error*100.0)
+                i, len(valid_loader), error=error * 100.0)
 
             print(msg)
-            error_list.append(error)
+            tgt_err.append(error)
+        print(" [*] finished on target domain!")
 
-        print("finished")
-        print("Mean Error: {:.3f}".format((np.mean(np.array(error_list)) * 100.0)))
-        print("Failure Rate: {:.4f}, AUC: {:.4f}".format(cal.test(error_list, 0.08)[0], cal.test(error_list, 0.08)[1]))
+        return src_err, tgt_err
+
 
 if __name__ == '__main__':
-    print(" [*] Testing on source domain!")
-    main_function_source()
+    src_err, tgt_err = main_function_test()
 
-    print(" [*] Testing on target domain!")
-    main_function_target()
+    cal = FR_AUC('300W')
+    print("Mean Error on Source Domain: {:.3f}".format((np.mean(np.array(src_err)) * 100.0)))
+    print("Failure Rate on Source Domain: {:.4f}, AUC: {:.4f}".format(cal.test(src_err, 0.08)[0], cal.test(src_err, 0.08)[1]))
+
+    cal = FR_AUC('Cartoon')
+    print("Mean Error on Target Domain: {:.3f}".format((np.mean(np.array(tgt_err)) * 100.0)))
+    print("Failure Rate on Target Domain: {:.4f}, AUC: {:.4f}".format(cal.test(tgt_err, 0.08)[0], cal.test(tgt_err, 0.08)[1]))
+    print('Done!')

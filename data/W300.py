@@ -107,7 +107,7 @@ class W300_Dataset(Dataset):
         return meta
 
 
-def get_W300_dataloader(opt):
+def get_W300_dataloader(batch_size, opt):
     normalize = transforms.Normalize(
         mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]
     )
@@ -116,7 +116,7 @@ def get_W300_dataloader(opt):
                                  transforms.Compose([transforms.ToTensor(), normalize]))
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=opt.batch_size,
+        batch_size=batch_size,
         shuffle=True,
         drop_last=True
     )

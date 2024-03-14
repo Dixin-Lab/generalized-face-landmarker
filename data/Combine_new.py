@@ -17,12 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 class Combine_Dataset(Dataset):
-    def __init__(self, cfg, root, is_train, transform=None):
+    def __init__(self, cfg, opt, is_train, transform=None, pseudo_label_path=None):
         self.Image_size = cfg.MODEL.IMG_SIZE
         self.is_train = is_train
-        self.root = root
+        self.src_root = opt.src_data
+        self.tgt_root = opt.tgt_data
+        self.pseudo_label_root = pseudo_label_path
         self.number_landmarks = cfg.W300.NUM_POINT
-        self.flip_index = np.genfromtxt(os.path.join("/home/jiayi/Work_landmark/Data/300W/", "Mirror.txt"), dtype=int,
+        self.flip_index = np.genfromtxt(os.path.join(self.src_root, "Mirror.txt"), dtype=int,
                                         delimiter=',')
 
         self.Fraction = cfg.W300.FRACTION
@@ -42,13 +44,14 @@ class Combine_Dataset(Dataset):
         self.Transform = transform
 
         if is_train:
-            self.annotation_file_300W = os.path.join("/home/jiayi/Work_landmark/Data/300W/", 'train_list.txt')
-            self.annotation_file_Cartoon = os.path.join("/home/jiayi/Work_landmark/Data/CariFace_dataset/",
+            self.annotation_file_300W = os.path.join(self.src_root, 'train_list.txt')
+            self.annotation_file_Cartoon = os.path.join(self.tgt_root,
                                                         'train_list.txt')
         else:
-            self.annotation_file_300W = os.path.join("/home/jiayi/Work_landmark/Data/300W/", 'test_list.txt')
-            self.annotation_file_Cartoon = os.path.join("/home/jiayi/Work_landmark/Data/CariFace_dataset/",
+            self.annotation_file_300W = os.path.join(self.src_root, 'test_list.txt')
+            self.annotation_file_Cartoon = os.path.join(self.tgt_root,
                                                         'test_list.txt')
+
         self.database = self.get_file_information()
 
     def get_file_information(self):
@@ -61,7 +64,7 @@ class Combine_Dataset(Dataset):
             f.close()
 
         for temp_info in info_list:
-            temp_name = os.path.join("/home/jiayi/Work_landmark/Data/300W/", temp_info)
+            temp_name = os.path.join(self.src_root, temp_info)
 
             Points = np.genfromtxt(temp_name[:-3] + 'pts', skip_header=3, skip_footer=1, delimiter=' ') - 1.0
 
@@ -78,9 +81,14 @@ class Combine_Dataset(Dataset):
             f.close()
 
         for temp_info in info_list:
-            temp_name = os.path.join("/home/jiayi/Work_landmark/Data/CariFace_dataset/images", temp_info)
-            # load updated pseudo landmarks
-            Points = np.load(os.path.join(self.root, temp_info + '.npy'))
+            if self.is_train:
+                temp_name = os.path.join(self.tgt_root, 'images', temp_info)
+                # load updated pseudo landmarks
+                Points = np.load(os.path.join(self.pseudo_label_root, temp_info + '.npy'))
+            else:
+                temp_name = os.path.join(self.tgt_root, 'images', temp_info)
+                # load true labels for testing
+                Points = np.load(os.path.join(self.tgt_root, 'landmarks', temp_info + '.npy'))
 
             max_index = np.max(Points, axis=0)
             min_index = np.min(Points, axis=0)
@@ -219,21 +227,21 @@ class Combine_Dataset(Dataset):
             return meta
 
 
-def get_combine_dataloader(root_landmark, batch_size):
+def get_combine_dataloader(opt, save_path):
     normalize = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])]
     )
 
-    train_dataset = Combine_Dataset(cfg=cfg, root=root_landmark, is_train=True, transform=normalize)
+    train_dataset = Combine_Dataset(cfg=cfg, opt=opt, is_train=True, transform=normalize, pseudo_label_path=save_path)
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=batch_size,
+        batch_size=opt.batch_size,
         shuffle=True,
         drop_last=True
     )
     # use true data and labels for testing
-    cartoon_dataset = Combine_Dataset(cfg=cfg, root="/home/jiayi/Work_landmark/Data/CariFace_dataset/landmarks", is_train=False,
+    cartoon_dataset = Combine_Dataset(cfg=cfg, opt=opt, is_train=False,
                                       transform=normalize)
     cartoon_loader = torch.utils.data.DataLoader(
         cartoon_dataset,

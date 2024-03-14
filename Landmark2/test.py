@@ -33,7 +33,7 @@ def calcuate_loss(name, pred, gt, trans):
 
     error_real = np.mean(np.linalg.norm((pred - gt), axis=1) / norm)
 
-    return error_real
+    return error_real, pred
 
 def calcuate_loss_ip(name, pred, gt, trans):
 

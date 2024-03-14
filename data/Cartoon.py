@@ -91,7 +91,7 @@ class StyleDataSet(Dataset):
         return meta
 
 
-def get_cartoon_dataloader(opt):
+def get_cartoon_dataloader(batch_size, opt):
     normalize = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])]
@@ -100,7 +100,7 @@ def get_cartoon_dataloader(opt):
     train_dataset = StyleDataSet(root=opt.tgt_data, is_train=True, transform=normalize)
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=opt.batch_size,
+        batch_size=batch_size,
         shuffle=True,
         drop_last=True
     )

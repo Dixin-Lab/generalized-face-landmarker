@@ -51,16 +51,20 @@ Download source-pretrained weights ```model_best.pth``` from [Google Drive](http
 ## Training Begin!
  
 ```python
-python train.py 
+python train.py --src_data path/to/source/data --tgt_data path/to/target/data --pretrain_path path/to/pretrained/checkpoint
 ```
 
 
 # Inference
-Download our [model]() and test on the CariFace by running:
+Download our [model](https://drive.google.com/file/d/14AO7RmSYnSQ1fluq0cJo09Dia9Pakgp_/view?usp=sharing) and test on the CariFace by running:
 ```python
-python test.py
+python test.py --checkpoint path/to/model/weights
 ```
 
+Further, to test on ArtiFace, download [checkpoint](https://drive.google.com/file/d/1HNadvxvmYPX0KdvgWnBaldf5C1elHQ8i/view?usp=sharing) and inference:
+```python
+python test_Artistic.py --checkpoint path/to/model/weights
+```
 
 # Citation
 

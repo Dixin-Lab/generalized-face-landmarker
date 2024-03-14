@@ -57,9 +57,9 @@ def train(warpA2B, W_optim, L_optim, opt):
     device = torch.device("cuda:{}".format(opt.gpu_id)) if torch.cuda.is_available() else torch.device("cpu")
     torch.cuda.set_device(device)
 
-    trainA_loader, testA_loader = get_W300_dataloader(opt)
-    trainB_loader, testB_loader = get_cartoon_dataloader(opt)
-    trainB_generate_loader, testB_generate_loader = get_cartoon_dataloader(opt)
+    trainA_loader, testA_loader = get_W300_dataloader(opt.batch_size, opt)
+    trainB_loader, testB_loader = get_cartoon_dataloader(opt.batch_size, opt)
+    trainB_generate_loader, testB_generate_loader = get_cartoon_dataloader(1, opt)
 
     MSE_loss = nn.MSELoss().to(device)
     landmark_loss = Alignment_Loss(cfg)
@@ -85,7 +85,7 @@ def train(warpA2B, W_optim, L_optim, opt):
                 W_optim.step()
 
             if (step + 1) % opt.update_frequency == 0:
-                save_path = os.path.join(opt.save_data_path, 'cariface_points_pesudo_' + str(step) + '/')
+                save_path = os.path.join(opt.save_data_dir, 'cariface_points_pesudo_' + str(step) + '/')
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
                 save_point(warpA2B, trainB_generate_loader, save_path)
@@ -94,7 +94,7 @@ def train(warpA2B, W_optim, L_optim, opt):
         else:
             print('---------start training landmarker----------')
             # use mixed dataloader (source data + true label && target data + pseudo label) to update face landmarker
-            train_combine_loader, test_combine_loader = get_combine_dataloader(save_path)
+            train_combine_loader, test_combine_loader = get_combine_dataloader(opt, save_path)
             for batch, meta in enumerate(train_combine_loader):
                 real = meta['image'].to(device)
                 lm = meta['points'].to(device)
@@ -133,8 +133,7 @@ def train(warpA2B, W_optim, L_optim, opt):
                 B2A = np.concatenate((B2A, np.concatenate((RGB2BGR(tensor2numpy(denorm(real_A[0]))) * 255.0,
                                                            RGB2BGR(tensor2numpy(denorm(real_B[0]))) * 255.0,
                                                            draw_landmark(warp_image[0], pre_B_lm[0])), 0)), 1)
-            if (step+1) % 15 == 0:
-                cv2.imwrite(os.path.join(opt.result_dir, 'A2B_%5d_%1d.png')% (step, index), B2A)
+                cv2.imwrite(os.path.join(opt.result_dir, 'A2B_%05d_%1d.png')% (step, index), B2A)
 
             params = {}
             params['warpA2B'] = warpA2B.state_dict()
@@ -156,7 +155,7 @@ def check_args(args):
     # --result_dir
     check_folder(args.result_dir)
     check_folder(args.snapshot_dir)
-    check_folder(args.save_data_path)
+    check_folder(args.save_data_dir)
 
     # --epoch
     try:
@@ -220,23 +219,24 @@ if __name__ == "__main__":
     parser.add_argument(
         "--save_data_dir",
         type=str,
-        default='./pseudo_data',
+        default='pseudo_data',
         help="the path to save the pseudo labels",
     )
     parser.add_argument(
         "--result_dir",
         type=str,
-        default='./result',
+        default='results',
         help="the path to save the validation results",
     )
     parser.add_argument(
         "--snapshot_dir",
         type=str,
-        default='./snapshots',
+        default='snapshots',
         help="the path to save the checkpoint file",
     )
 
     opt = parser.parse_args()
+    check_args(opt)
 
     warpA2B, W_optim, L_optim = build_model(opt)
     train(warpA2B, W_optim, L_optim, opt)
