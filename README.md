@@ -1,7 +1,7 @@
 # Generalizable Face Landmarking Guided by Conditional Face Warping (CVPR 2024)
 This is the official repository for the following paper:
 
->**Generalizable Face Landmarking Guided by Conditional Face Warping**  [[paper]](https://openreview.net/pdf?id=wB2R7QQncw) [[project page]](https://plustwo0.github.io/project-face-landmarker/)<br>
+>**Generalizable Face Landmarking Guided by Conditional Face Warping**  [[paper]](https://openreview.net/pdf?id=wB2R7QQncw) [[arxiv]](https://arxiv.org/abs/2404.12322) [[project page]](https://plustwo0.github.io/project-face-landmarker/)<br>
  <br>Jiayi Liang, Haotian Liu, Hongteng Xu, Dixin Luo<br>
  Accepted by CVPR 2024.
 
