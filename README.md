@@ -132,5 +132,14 @@ python test_Artistic.py --checkpoint path/to/model/weights
 ```
 
 # Citation
-
-# Aknowledgement
+If our work is helpful for your research, please cite our paper:
+```
+@InProceedings{Liang_2024_CVPR,
+    author    = {Liang, Jiayi and Liu, Haotian and Xu, Hongteng and Luo, Dixin},
+    title     = {Generalizable Face Landmarking Guided by Conditional Face Warping},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    month     = {June},
+    year      = {2024},
+    pages     = {2425-2435}
+}
+```
